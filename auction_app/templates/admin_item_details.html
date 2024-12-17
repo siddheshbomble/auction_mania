@@ -1,0 +1,29 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+<div class="container-xxl flex-grow-1 container-p-y">
+    <h4 class="fw-bold py-3 mb-4" style="color:#1b263b">Item Details</h4>
+    
+    <div class="card" style="background-color:#15616d">
+        <div class="card-body d-flex justify-content-between">
+            <!-- Left Side: Item Details -->
+            <div class="item-details" style="flex: 1; color:white;">
+                <h5 style="color:white;" class="card-title">{{ item.item_name }}</h5>
+                <p><strong>Owner Name:</strong> {{ item.owner_name }}</p>
+                <p><strong>Start Price:</strong> {{ item.item_start_price }}</p>
+                <p><strong>Highest Bid:</strong> {{ highest_bid }}</p>
+                <p><strong>Auction End Date:</strong> {{ item.auction_end_date }}</p>
+                <p><strong>Item Description:</strong> {{ item.item_description }}</p>
+                <p><strong>Winner Name:</strong> {{ winner_name }}</p>
+                <p><strong>Soldout Price:</strong> {{ soldout_price }}</p>
+
+            </div>
+
+            <!-- Right Side: Item Image -->
+            <div class="item-image" style="flex-shrink: 0; width: 200px;">
+                <img src="/media/{{ item.item_image }}" style="width:100%; height:auto;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

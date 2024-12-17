@@ -1,0 +1,38 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="card" style="margin-top: 30px; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <div class="card-header" style=" background-color:#15616d; ">
+      <h3 style="color:white;">Members</h3>
+    </div> 
+    <div class="card-body" style=" background-color:#15616d">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="color:white; font-size:15px;">Username</th>
+              <th style="color:white; font-size:15px;">Email</th>
+              <th style="color:white; font-size:15px;">First Name</th>
+              <th style="color:white; font-size:15px;">Last Name</th>
+              <th style="color:white; font-size:15px;">Phone</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% csrf_token %}
+            {% for x in users %}
+            <tr>
+              <td style="color:white;">{{ x.username }}</td>
+              <td style="color:white;">{{ x.email }}</td>
+              <td style="color:white;">{{ x.firstname }}</td>
+              <td style="color:white;">{{ x.lastname }}</td>
+              <td style="color:white;">{{ x.phone }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

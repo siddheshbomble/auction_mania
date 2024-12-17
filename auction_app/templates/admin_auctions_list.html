@@ -1,0 +1,90 @@
+{% extends "admin_home.html" %}
+
+{% load static %}
+
+{% block content %}
+
+{% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="content-wrapper">
+
+  <div class="container-xxl flex-grow-1 container-p-y">
+    <h4 style="color:#1b263b" class="fw-bold py-3 mb-4"></span>Admin / All Available Auctions</h4>
+
+    <div class="card" style="background-color:#15616d">
+
+      <div class="table-responsive text-nowrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="color:white;">Item Image</th>
+              <th style="color:white;">Name</th>
+              <th style="color:white;">Start Price</th>
+              <th style="color:white;">Highes Bid</th>
+              <th style="color:white;">Closing Date</th>
+              <th style="color:white;">Action</th>
+            </tr>
+          </thead>
+          <tbody class="table-border-bottom-0">
+
+            {% for obj in item_list %}
+
+            <tr>
+              <td style="color:white;">
+                <img src="/media/{{ obj.item_image }}" alt="image not found" style="width:100px;height:auto;">
+              </td>
+              <td style="color:white;">{{ obj.item_name }}</td>
+              <td style="color:white;">{{ obj.item_start_price }}</td>
+              <td style="color:white;">{{ obj.highest_bid }}</td>
+              <td style="color:white;">{{ obj.auction_end_date }}</td>
+              <td style="color:white;">
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ obj.id }}">
+                  <button type="submit" name="editsubmit" value="edit" class="btn btn-primary btn-sm">
+                    <i class="bx bx-edit-alt"></i> Edit
+                  </button>
+                </form>
+                <a href="{% url 'item_details' item_id=obj.id %}" class="btn btn-warning btn-sm">
+                    <i class="bx bx-show-alt"></i> View 
+                </a>
+
+
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ obj.id }}">
+                  <button type="submit" name="deletesubmit" value="delete" class="btn btn-danger btn-sm">
+                    <i class="bx bx-trash"></i> Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!--/ Basic Bootstrap Table -->
+
+    <div class="mt-4 d-inline-flex">
+        <a href="{% url 'admin_add_item' %}"><button type="button" class="btn btn-primary btn-md">Add Item</button></a>
+      </div>
+  </div>
+
+{% endblock %}
+
+<script>
+  document.getElementById('searchInput').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Prevent the default form submission
+      document.getElementById('searchForm').submit(); // Submit the form
+    }
+  });
+</script>

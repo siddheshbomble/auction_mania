@@ -1,0 +1,74 @@
+{% extends "user_home.html" %}
+
+{% load static %}
+
+
+
+
+
+{% block content %}
+
+{% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+<div class="content-wrapper">
+  <!-- Content -->
+
+  <div class="container-xxl flex-grow-1 container-p-y">
+    <h4 style="color:#1b263b" class="fw-bold py-3 mb-4"></span>All Available Auctions</h4>
+
+    <!-- Basic Bootstrap Table -->
+    <div class="card" style="background-color:#15616d">
+
+      <div class="table-responsive text-nowrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="color:white;">Auction Item</th>
+              <th style="color:white;">Item Info</th>
+              <th style="color:white;">Start Price</th>
+              <th style="color:white;">Highes Bid</th>
+              <th style="color:white;">Closing Date</th>
+              <th style="color:white;">Action</th>
+            </tr>
+          </thead>
+          <tbody class="table-border-bottom-0">
+            {% for obj in item_list %}
+
+            <tr>
+              <td style="color:white;"><img src="/media/{{ obj.item_image }}"  style="width:100px;height:auto;"></td>
+              <td style="color:white;">{{ obj.item_name }}</td>
+              <td style="color:white;">{{ obj.item_start_price }}</td>
+              <td style="color:white;">{{ obj.highest_bid }}</td>
+              <td style="color:white;">{{ obj.auction_end_date }}</td>
+              <td style="color:white;">
+                <a class="btn btn-primary btn-sm" href="{% url 'user_bid' item_id=obj.id %}">
+                    <i class="bx bx-edit-alt"></i> Bid
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!--/ Basic Bootstrap Table -->
+  </div>
+
+
+  {% endblock %}
+
+  <script>
+    document.getElementById('searchInput').addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent the default form submission
+        document.getElementById('searchForm').submit(); // Submit the form
+      }
+    });
+  </script>

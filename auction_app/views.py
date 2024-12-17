@@ -1,0 +1,537 @@
+from django.shortcuts import render
+from django.http import HttpResponse
+from django.template import loader
+from django import forms
+from django.contrib.auth.models import User
+from auction_app.forms import signup
+from django.db import IntegrityError 
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login
+from django.views import View
+from django.contrib.auth import logout
+from django.utils.decorators import method_decorator
+from django.db.models import Q
+from auction_app.models import ItemModel
+from django.utils import timezone
+
+
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.models import User
+from .models import UserModel,UserModelManager,ItemModel
+from django.contrib.auth.hashers import check_password
+
+from django.shortcuts import render, get_object_or_404
+
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import ItemModel, BidModel
+from django.db.models import Max
+from django.contrib import messages
+
+def index(request):
+    users = UserModel.objects.all().values()
+    template = loader.get_template("index.html")
+    context = {
+        'users':users
+    }
+    return HttpResponse(template.render(context,request))
+
+class signupView(View):
+    def get(self, request, *args, **kwargs):
+        form = signup()
+        return render(request,"signup.html",{"form":form})
+    
+    def post(self, request, *args, **kwargs):
+        form = signup(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.password = make_password(form.cleaned_data["password"])
+            user.save()
+            return redirect("login_page")
+        return render(request,"signup.html",{"form":form})
+
+class logoutView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, template_name="login.html")
+
+class loginView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, "login.html")
+
+    def post(self, request, *args, **kwargs):
+        """ user_obj = authenticate(
+            request,
+            username=request.POST.get("username"),
+            password=request.POST.get("password"),
+        ) """
+        username=request.POST.get("username")
+        password=request.POST.get("password")
+
+        try:
+            # Query your custom model for the user
+            user_obj = UserModel.objects.get(username=username)
+            # Verify the password
+            if check_password(password, user_obj.password):
+                # Log the user in
+                login(request, user_obj)  # Ensure your user model works with Django's session
+                if user_obj.is_staff:
+                    #request.session["user_id"] = user_obj.user_id
+                    #request.session["user_credit"] = user_obj.user_credit
+
+                    return redirect("admin_auctions_list")
+                else:
+                    return redirect("user_auctions_list")
+            else:
+                raise UserModel.DoesNotExist
+        except UserModel.DoesNotExist:
+            return render(request, "login.html", {"error": "Invalid Credentials"})
+
+
+        print(f"Authenticated user: {user_obj}")
+        if not user_obj:
+            return render(request, "login.html", {"error": "Invalid Credentials"})
+
+            login(request, user_obj)
+            if user_obj.is_staff:
+                return redirect("admin_auctions_list")
+            else:
+                return redirect("user_auctions_list")
+
+class adminView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, template_name="admin_home.html")
+
+class userView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, template_name="user_home.html")
+
+class userAuctionsListView(View):
+    def get(self, request, *args, **kwargs):
+        """displays list of available books for admin"""
+        if request.GET.get("query"):
+            item_obj = ItemModel.objects.filter(
+                item_name__icontains=request.GET.get("query")
+            ).values()
+        else:
+            item_obj = ItemModel.objects.values()
+
+
+        # Add highest bid to each item
+        for obj in item_obj:
+            item_id = obj.get("id")
+            highest_bid = (
+                BidModel.objects.filter(item_id=item_id)
+                .aggregate(Max("bid_amount"))["bid_amount__max"]
+            )
+            obj["highest_bid"] = highest_bid if highest_bid is not None else 0.00
+            obj["item_name"] = obj.get("item_name")
+            print("-----------------> MEDIA : ", obj["item_image"])
+            print("-----------------> Highest Bid: ", obj["highest_bid"])
+            
+
+        return render(
+            request,
+            template_name="user_auctions_list.html",
+            context={"item_list": item_obj},
+        )
+
+
+""" @method_decorator(login_required, name='dispatch')  
+class userBidView(View):
+    def get(self, request, item_id, *args, **kwargs):
+        item = get_object_or_404(ItemModel, id=item_id)
+        highest_bid = item.bids.first()  # Get the highest bid
+        
+        return render(request, 'user_bid.html', {
+            'item': item,
+            'highest_bid': highest_bid,
+        })
+
+    def post(self, request, item_id, *args, **kwargs):
+        
+        item = get_object_or_404(ItemModel, id=item_id)
+        print("--------------->> ITEM : ",item_id)
+        print("--------------->> ITEM : ",item.owner_name)
+        print("--------------->> ITEM : ",item.item_name)
+        print("--------------->> ITEM : ",item.item_description)
+        print("--------------->> ITEM : ",item.item_image)
+        print("--------------->> ITEM : ",item.item_start_price)
+        print("--------------->> ITEM : ",item.auction_start_date)
+        print("--------------->> ITEM : ",item.auction_end_date)
+        print("--------------->> ITEM : ",item.soldout_price)
+
+        print("--------------->> USER : ",request.user)
+        print("--------------->> USER : ",item)
+
+
+
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            return HttpResponse("You must be logged in to place a bid.", status=401)
+
+        try:
+            bid_amount = float(request.POST.get('bid_amount'))
+            print(f"------> Bid Amount: {request.POST.get('bid_amount')}")
+
+        except (TypeError, ValueError):
+            return HttpResponse("Invalid bid amount", status=400)
+
+        highest_bid = item.bids.aggregate(Max('bid_amount'))['bid_amount__max']
+        print("--------------->> HIGHEST BID : ",highest_bid)
+
+        if highest_bid is not None and bid_amount <= highest_bid:
+            return HttpResponse("Bid must be higher than the current highest bid", status=400)
+
+        try:
+            new_bid = BidModel.objects.create(
+                item=item,
+                bidder=request.user,
+                bid_amount=bid_amount
+            )
+            
+            return redirect('item_details', item_id=item.id)  
+        except IntegrityError as e:
+            return HttpResponse(f"Error placing bid: {str(e)}", status=500)
+        except Exception as e:
+            return HttpResponse(f"Error placing bid: {str(e)}", status=500)
+ """
+ 
+
+@method_decorator(login_required, name='dispatch')
+class userBidView(View):
+    def get(self, request, item_id, *args, **kwargs):
+        item = get_object_or_404(ItemModel, id=item_id)
+        highest_bid = item.bids.first()  
+        
+        if timezone.now() > item.auction_end_date:  
+            messages.warning(request, 'This auction has already ended.')
+            return redirect("user_auctions_list")
+        
+        return render(request, 'user_bid.html', {
+            'item': item,
+            'highest_bid': highest_bid,
+        })
+
+    def post(self, request, item_id, *args, **kwargs):
+        item = get_object_or_404(ItemModel, id=item_id)
+        
+
+
+        if not request.user.is_authenticated:
+            messages.info(request, 'You must be logged in to place a bid.')
+            return redirect("user_bid",item_id=item_id)
+
+        try:
+            bid_amount = float(request.POST.get('bid_amount'))
+        except (TypeError, ValueError):
+            messages.info(request, 'Invalid bid amount')
+            return redirect("user_bid",item_id=item_id)
+
+        if request.user.user_credit < bid_amount:
+            messages.info(request, 'You do not have enough credit to place this bid')
+            return redirect("user_bid",item_id=item_id)
+
+
+        highest_bid = item.bids.aggregate(Max('bid_amount'))['bid_amount__max']
+        
+        if highest_bid is None and bid_amount < item.item_start_price:
+            messages.info(request, 'Bid must be higher than start price.')
+            return redirect("user_bid",item_id=item_id)
+        elif highest_bid is not None and bid_amount <= highest_bid:
+            messages.info(request, 'Bid must be higher than the current highest bid.')
+            return redirect("user_bid",item_id=item_id)
+
+        try:
+            new_bid = BidModel.objects.create(
+                item=item,
+                bidder=request.user.id,
+                bid_amount=bid_amount
+            )
+
+            request.user.user_credit -= bid_amount
+            request.user.save()  
+
+            return redirect('user_auctions_list')  
+        except IntegrityError as e:
+            return HttpResponse(f"Error IntegrityError placing bid: {str(e)}", status=500)
+        except Exception as e:
+            return HttpResponse(f"Error Exception placing bid: {str(e)}", status=500)
+
+class userAddCreditsView(View):
+    def get(self, request, *args, **kwargs):
+        user_id = request.user.id
+        print("------------->  USER ID : " , user_id)
+
+        user_obj = request.user  # Logged-in user
+        return render(
+            request,
+            template_name="user_add_credits.html",
+            context={"user_obj": user_obj}
+        )
+
+    def post(self, request, *args, **kwargs):
+        user_id = request.user.id
+        print("------------->  USER ID : " , user_id)
+
+        user_obj = request.user  # Logged-in user
+        credits_to_add = request.POST.get("credits")
+        if credits_to_add:
+            try:
+                user_obj.user_credit += int(credits_to_add)
+                user_obj.save()
+                print("User credits updated successfully!")
+            except ValueError:
+                print("Invalid credit value.")
+        return render(
+            request,
+            template_name="user_add_credits.html",
+            context={"user_obj": user_obj}
+        )
+
+""" class userOwnBidsView(View):
+    def get(self, request, *args, **kwargs):
+        bid_obj = BidModel.objects.values()
+        item_id = bid_obj.item_id
+        for obj in bid_obj:
+            bid_id = obj.get("id")
+            highest_bid = (
+                BidModel.objects.filter(item_id=item_id)
+                .aggregate(Max("bid_amount"))["bid_amount__max"]
+            )
+            item_image = (
+                ItemModel.objects.filter(item_id=item_id)
+            )
+            obj["highest_bid"] = highest_bid if highest_bid is not None else 0.00
+            obj["item_name"] = obj.get("item_name")
+            print("-----------------> MEDIA : ", obj["item_image"])
+            print("-----------------> Highest Bid: ", obj["highest_bid"])
+            
+
+        return render(
+            request,
+            template_name="user_view_own_bids.html",
+            context={"item_list": item_obj},
+        ) """
+
+
+
+@method_decorator(login_required, name='dispatch')
+class userOwnBidsView(View):
+    def get(self, request, *args, **kwargs):
+
+        bid_queryset = BidModel.objects.filter(bidder=request.user.id)
+
+        bid_details = []
+        for bid in bid_queryset:
+            bid_details.append({
+                "item_image": bid.item.item_image if bid.item.item_image else None,
+                "item_name": bid.item.item_name,
+                "start_price": bid.item.item_start_price,
+                "highest_bid": BidModel.objects.filter(item=bid.item)
+                                                .aggregate(Max("bid_amount"))["bid_amount__max"],
+                "your_bid": bid.bid_amount,
+                "closing_date": bid.item.auction_end_date,
+            })
+        
+        # Pass bid_details to the template
+        return render(
+            request,
+            "user_view_own_bids.html",
+            context={"bid_details": bid_details}
+        )
+
+class adminAuctionsListView(View):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("query")
+
+        if query:
+            item_obj = ItemModel.objects.filter(
+                item_name__icontains=query
+            ).values()
+        else:
+            item_obj = ItemModel.objects.values()
+
+        for obj in item_obj:
+            item_id = obj.get("id")
+            highest_bid = (
+                BidModel.objects.filter(item_id=item_id)
+                .aggregate(Max("bid_amount"))["bid_amount__max"]
+            )
+            obj["highest_bid"] = highest_bid if highest_bid is not None else 0.00
+            obj["item_name"] = obj.get("item_name")
+            print("-----------------> MEDIA : ", obj["item_image"])
+            print("-----------------> Highest Bid: ", obj["highest_bid"])
+
+        return render(
+            request,
+            template_name="admin_auctions_list.html",
+            context={"item_list": item_obj},
+        )
+
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("deletesubmit") and request.POST.get("item_id"):
+            item_id = request.POST.get("item_id")
+            item = get_object_or_404(ItemModel, id=item_id)
+            if item.auction_start_date and item.auction_start_date <= timezone.now():
+                messages.warning(request, "Deleting is not allowed because the auction has already started.")
+                return redirect("admin_auctions_list")
+            else:
+                ItemModel.objects.filter(id=request.POST.get("item_id")).delete()
+                return redirect("admin_auctions_list")
+        
+        
+
+        
+        if request.POST.get("editsubmit") and request.POST.get("item_id"):
+            item_id = request.POST.get("item_id")
+            item = get_object_or_404(ItemModel, id=item_id)
+            if item.auction_start_date and item.auction_start_date <= timezone.now():
+                messages.warning(request, "Editing is not allowed because the auction has already started.")
+                return redirect("admin_auctions_list")
+            else:
+                return redirect("admin_add_item_with_id",item_id=item_id)
+
+class adminItemDetailView(View):
+    def get(self, request, *args, **kwargs):
+
+        item_id = kwargs.get('item_id')
+        item = get_object_or_404(ItemModel, id=item_id)
+        if timezone.now() > item.auction_end_date:
+
+            highest_bid = (
+                BidModel.objects.filter(item_id=item_id)
+                .aggregate(Max("bid_amount"))["bid_amount__max"]
+            )
+
+
+            winning_bid = BidModel.objects.filter(item_id=item_id, bid_amount=highest_bid).first()
+            
+
+            if highest_bid:
+                item.soldout_price = highest_bid
+                item.save()
+
+
+            winner_name = winning_bid.bidder if winning_bid else "No winner (no bids)"
+
+            return render(request, 'admin_item_details.html', {
+                'item': item,
+                'highest_bid': highest_bid,
+                'winner_name': winner_name,
+                'soldout_price': item.soldout_price
+            })
+        else:
+            return render(request, 'admin_item_details.html', {'item': item})
+            
+
+
+        #return render(request, 'admin_item_details.html', {'item': item,"highest_bid": highest_bid}) 
+ 
+""" 
+def get(self, request, *args, **kwargs):
+    item_id = kwargs.get('item_id')
+    item = get_object_or_404(ItemModel, id=item_id)
+
+  
+    if timezone.now() > item.auction_end_date:
+
+        highest_bid = (
+            BidModel.objects.filter(item_id=item_id)
+            .aggregate(Max("bid_amount"))["bid_amount__max"]
+        )
+
+
+        winning_bid = BidModel.objects.filter(item_id=item_id, bid_amount=highest_bid).first()
+        
+
+        if highest_bid:
+            item.soldout_price = highest_bid
+            item.save()
+
+
+        winner_name = winning_bid.bidder if winning_bid else "No winner (no bids)"
+
+        return render(request, 'admin_item_details.html', {
+            'item': item,
+            'highest_bid': highest_bid,
+            'winner_name': winner_name,
+            'soldout_price': item.soldout_price
+        })
+    else:
+        return render(request, 'admin_item_details.html', {'item': item})
+ """
+class adminUsersListView(View):
+    def get(self, request, *args, **kwargs):
+        users = UserModel.objects.filter(is_staff=False, is_superuser=False).values()
+        context = {
+            'users':users
+        }
+        return render(request, template_name="admin_users_list.html",context=context)
+
+class adminAddItemView(View):
+    def get(self, request, *args, **kwargs):
+        item_obj = None
+        item_id = kwargs.get('item_id')
+
+        """if request.GET.get("id"):
+            item_obj = (
+                ItemModel.objects.filter(id=request.GET.get("id"))
+                .values()
+                .first()
+            ) """
+        item_obj = (
+            ItemModel.objects.filter(id=item_id)
+            .values()
+            .first()
+        )
+        
+        # Fetch the item
+
+
+        if item_obj and item_obj.get("item_image"):
+            item_obj["item_image"] = item_obj["item_image"].split("/")[1]
+
+            return render(
+                request,
+                template_name="admin_add_item.html",
+                context={"item_obj": item_obj},
+            )
+
+    def post(self, request, *args, **kwargs):
+
+        #item_id = request.GET.get("id")
+        item_id = kwargs.get('item_id')
+        
+        # Update the item if it exists, or create a new item if the ID is not provided
+        if item_id:
+            item_obj = ItemModel.objects.get(id=item_id)
+            item_obj.item_name = request.POST.get("itemname")
+            item_obj.owner_name = request.POST.get("ownername")
+            item_obj.item_description = request.POST.get("description")
+            item_obj.item_start_price = request.POST.get("startprice")
+            item_obj.auction_start_date = request.POST.get("startdate")
+            item_obj.auction_end_date = request.POST.get("enddate")
+
+            # Check if a new image is uploaded, and update the item image
+            if request.FILES.get("itemimage"):
+                item_obj.item_image = request.FILES.get("itemimage")
+
+            item_obj.save()  # Save the updated item
+            return redirect("admin_auctions_list")  # Redirect to the auctions list page
+
+        else:
+            # Create a new item
+            ItemModel.objects.create(
+                item_name=request.POST.get("itemname"),
+                owner_name=request.POST.get("ownername"),
+                item_image=request.FILES.get("itemimage"),
+                item_description=request.POST.get("description"),
+                item_start_price=request.POST.get("startprice"),
+                auction_start_date=request.POST.get("startdate"),
+                auction_end_date=request.POST.get("enddate"),
+            )
+            return redirect("admin_auctions_list")  # Redirect to the auctions list page

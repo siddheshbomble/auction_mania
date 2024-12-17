@@ -1,0 +1,59 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+
+  <div class="container" style="margin-left:130px;">
+    <div class="card" style="margin-top: 30px; max-width:80%; justify-content:center; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <div class="card-body"  style=" background-color:#15616d; ">
+        <h3 class="card-title" style="color:white;">Add Item for Auction</h3>
+
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <div class="mb-3">
+            <label style="color:white;" for="ownername" class="form-label">Owner name</label>
+            <input type="text" class="form-control" id="ownername" value="{% if item_obj and item_obj.owner_name %}{{item_obj.owner_name}}{% endif %}" name="ownername" placeholder="Enter owner name" autofocus required />
+          </div>
+
+          <div class="mb-3">
+            <label style="color:white;" for="itemname" class="form-label">Item name</label>
+            <input type="text" class="form-control" id="itemname" value="{% if item_obj and item_obj.item_name %}{{item_obj.item_name}}{% endif %}" name="itemname" placeholder="Enter item name" required />
+          </div>
+
+          <div class="mb-3">
+            <label style="color:white;" for="description" class="form-label">Description</label>
+            <input type="text" class="form-control" id="description" value="{% if item_obj and item_obj.item_description %}{{item_obj.item_description}}{% endif %}" name="description" placeholder="Enter item description" required />
+          </div>
+
+          <div class="mb-3">
+            <label style="color:white;" for="itemimage" class="form-label">Item Image</label>
+            {% if item_obj and item_obj.item_image %}
+              <img src="{{ item_obj.item_image.url }}" alt="Item Image" style="max-width: 200px; max-height: 200px; margin-bottom: 10px;">
+            {% endif %}
+            <input type="file" class="form-control" id="itemimage" name="itemimage" placeholder="Select item image" />
+          </div>
+
+          <div class="mb-3">
+            <label style="color:white;" for="startprice" class="form-label">Start price</label>
+            <input type="number" class="form-control" id="startprice" value="{% if item_obj and item_obj.item_start_price %}{{item_obj.item_start_price}}{% endif %}" name="startprice" placeholder="Enter start price" required />
+          </div>
+
+          <div class="mb-3">
+            <label style="color:white;" for="startdate" class="form-label">Start date and time</label>
+            <input type="date" class="form-control" id="startdate" value="{% if item_obj and item_obj.auction_start_date %}{{ item_obj.auction_start_date|date:"Y-m-d" }}{% endif %}" name="startdate" placeholder="Select start date" required />
+          </div>
+
+          <div class="mb-3">
+            <label style="color:white;" for="enddate" class="form-label">End date and time</label>
+            <input type="date" class="form-control" id="enddate" value="{% if item_obj and item_obj.auction_end_date %}{{ item_obj.auction_end_date|date:"Y-m-d" }}{% endif %}" name="enddate" placeholder="Select end date" required />
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+{% endblock content %}
