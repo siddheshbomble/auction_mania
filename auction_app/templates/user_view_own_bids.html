@@ -1,56 +1,98 @@
 {% extends "user_home.html" %}
-
 {% load static %}
-
 
 {% block content %}
 <div class="content-wrapper">
   <!-- Content -->
 
   <div class="container-xxl flex-grow-1 container-p-y">
-    <h4 style="color:#1b263b" class="fw-bold py-3 mb-4"></span>All Your Bids</h4>
 
-    <!-- Basic Bootstrap Table -->
+    <!-- Table for won auctions -->
+    <h4 style="color:#1b263b" class="fw-bold py-3 mt-5 mb-4">Your Collection</h4>
     <div class="card" style="background-color:#15616d">
-
-      <div class="table-responsive text-nowrap">
+      <div class="table-responsive text-nowrap" style="max-height: 400px; overflow-y: auto;">
         <table class="table">
           <thead>
             <tr>
               <th style="color:white;">Auction Item</th>
               <th style="color:white;">Item Name</th>
               <th style="color:white;">Start Price</th>
-              <th style="color:white;">Highes Bid</th>
-              <th style="color:white;">Your Bid</th>
+              <th style="color:white;">Winning Bid</th>
               <th style="color:white;">Closing Date</th>
             </tr>
           </thead>
           <tbody class="table-border-bottom-0">
-            <tr>
-              {% for bid in bid_details %}
-              <td style="color:white;"><img src="{{ bid.item_image.url }}"  style="width:100px;height:auto;"></td>
-              <td style="color:white;">{{ bid.item_name }}</td>
-              <td style="color:white;">{{ bid.start_price }}$</td>
-              <td style="color:white;">{{ bid.highest_bid }}$</td>
-              <td style="color:white;">{{ bid.your_bid }}$</td>
-              <td style="color:white;">{{ bid.closing_date }}</td>
-            </tr>
-            {% endfor %}
+            {% if won_details %}
+              {% for win in won_details %}
+                <tr>
+                  <td style="color:white;">
+                    <img src="{{ win.item_image.url }}" style="width:100px;height:auto;">
+                  </td>
+                  <td style="color:white;">{{ win.item_name }}</td>
+                  <td style="color:white;">{{ win.start_price }}$</td>
+                  <td style="color:white;">{{ win.winning_bid }}$</td>
+                  <td style="color:white;">{{ win.closing_date }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="5" style="color:white; text-align:center;">No winnings yet.</td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
     </div>
     <!--/ Basic Bootstrap Table -->
+
+    <h4 style="color:#1b263b" class="fw-bold py-3 mb-4">All Your Bids</h4>
+    <!-- Table for all bids -->
+    <div class="card" style="background-color:#15616d">
+      <div class="table-responsive text-nowrap" style="max-height: 400px; overflow-y: auto;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="color:white;">Auction Item</th>
+              <th style="color:white;">Item Name</th>
+              <th style="color:white;">Start Price</th>
+              <th style="color:white;">Highest Bid</th>
+              <th style="color:white;">Your Bid</th>
+              <th style="color:white;">Closing Date</th>
+            </tr>
+          </thead>
+          <tbody class="table-border-bottom-0">
+            {% if bid_details %}
+              {% for bid in bid_details %}
+                <tr>
+                  <td style="color:white;">
+                    <img src="{{ bid.item_image.url }}" style="width:100px;height:auto;">
+                  </td>
+                  <td style="color:white;">{{ bid.item_name }}</td>
+                  <td style="color:white;">{{ bid.start_price }}$</td>
+                  <td style="color:white;">{{ bid.highest_bid }}$</td>
+                  <td style="color:white;">{{ bid.your_bid }}$</td>
+                  <td style="color:white;">{{ bid.closing_date }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="6" style="color:white; text-align:center;">No bids placed.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
+</div>
+{% endblock %}
 
-
-  {% endblock %}
-
-  <script>
-    document.getElementById('searchInput').addEventListener('keypress', function(event) {
-      if (event.key === 'Enter') {
-        event.preventDefault(); // Prevent the default form submission
-        document.getElementById('searchForm').submit(); // Submit the form
-      }
-    });
-  </script>
+<script>
+  document.getElementById('searchInput').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault(); // Prevent the default form submission
+      document.getElementById('searchForm').submit(); // Submit the form
+    }
+  });
+</script>
