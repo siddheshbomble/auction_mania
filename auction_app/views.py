@@ -1,35 +1,25 @@
-from django.shortcuts import render
 from django.http import HttpResponse
 from django.template import loader
 from django import forms
 from django.contrib.auth.models import User
 from auction_app.forms import signup
 from django.db import IntegrityError 
-from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.views import View
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.db.models import Q
-from auction_app.models import ItemModel
 from django.utils import timezone
-
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
-from .models import UserModel,UserModelManager,ItemModel
+from .models import UserModel,UserModelManager,ItemModel,BidModel
 from django.contrib.auth.hashers import check_password
-
-from django.shortcuts import render, get_object_or_404
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .models import ItemModel, BidModel
-from django.db.models import Max
 from django.contrib import messages
 
 from django.db.models import Max, OuterRef, Subquery
@@ -125,9 +115,10 @@ class userAuctionsListView(View):
         if query:
             item_obj = ItemModel.objects.filter(
                 Q(item_name__icontains=query) & Q(soldout_price=0)
-            ).values()
+            ).order_by('-id').values()
+            
         else:
-            item_obj = ItemModel.objects.filter(soldout_price=0).values()
+            item_obj = ItemModel.objects.filter(soldout_price=0).order_by('-id').values()
 
         # Add highest bid to each item
         for obj in item_obj:
@@ -275,13 +266,10 @@ class userOwnBidsView(View):
         )
 """
 
-
-
-
 @method_decorator(login_required, name='dispatch')
 class userOwnBidsView(View):
     def get(self, request, *args, **kwargs):
-        # Fetch all bids made by the user
+
         bid_queryset = BidModel.objects.filter(bidder=request.user.id).order_by('-bid_time')
 
         bid_details = []
@@ -296,7 +284,6 @@ class userOwnBidsView(View):
                 "closing_date": bid.item.auction_end_date,
             })
 
-        # Fetch auctions the user has won
         won_queryset = BidModel.objects.filter(
             bidder=request.user.id,
             bid_amount=Subquery(
@@ -317,7 +304,6 @@ class userOwnBidsView(View):
                 "closing_date": win.item.auction_end_date,
             })
 
-        # Pass bid_details and won_details to the template
         return render(
             request,
             "user_view_own_bids.html",
@@ -327,9 +313,9 @@ class userOwnBidsView(View):
             }
         )
 
-
+@method_decorator(login_required, name='dispatch')
 class adminAuctionsListView(View):
-    def get(self, request, *args, **kwargs):
+    """def get(self, request, *args, **kwargs):
         query = request.GET.get("query")
 
         if query:
@@ -348,6 +334,32 @@ class adminAuctionsListView(View):
             obj["highest_bid"] = highest_bid if highest_bid is not None else 0.00
             obj["item_name"] = obj.get("item_name")
             print("-----------------> MEDIA : ", obj["item_image"])
+            print("-----------------> Highest Bid: ", obj["highest_bid"])
+
+        return render(
+            request,
+            template_name="admin_auctions_list.html",
+            context={"item_list": item_obj},
+        ) """
+
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("query")
+
+        if query:
+            item_obj = ItemModel.objects.filter(
+                item_name__icontains=query
+            ).order_by('-id').values()  # Fetch dictionaries and order by item_id
+        else:
+            item_obj = ItemModel.objects.all().order_by('-id').values()  # Fetch dictionaries and order by item_id
+
+        # Add highest bid to each item
+        for obj in item_obj:
+            highest_bid = (
+                BidModel.objects.filter(item_id=obj["id"])
+                .aggregate(Max("bid_amount"))["bid_amount__max"]
+            )
+            obj["highest_bid"] = highest_bid if highest_bid is not None else 0.00
+            print("-----------------> MEDIA : ", obj.get("item_image"))
             print("-----------------> Highest Bid: ", obj["highest_bid"])
 
         return render(
