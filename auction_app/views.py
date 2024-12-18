@@ -138,6 +138,15 @@ class userAuctionsListView(View):
             template_name="user_auctions_list.html",
             context={"item_list": item_obj},
         )
+    def post(self, request, *args, **kwargs):
+        if request.POST.get("bidsubmit") and request.POST.get("item_id"):
+            item_id = request.POST.get("item_id")
+            item = get_object_or_404(ItemModel, id=item_id)
+            if item.auction_start_date and item.auction_start_date >= timezone.now():
+                messages.warning(request, "Bidding is not allowed because auction is not started yet.")
+                return redirect("user_auctions_list")
+            else:
+                return redirect("user_bid",item_id=item_id)
 
 
 """ @method_decorator(login_required, name='dispatch')  
@@ -199,7 +208,9 @@ class userBidView(View):
         except Exception as e:
             return HttpResponse(f"Error placing bid: {str(e)}", status=500)
  """
- 
+
+
+
 
 @method_decorator(login_required, name='dispatch')
 class userBidView(View):
@@ -238,7 +249,7 @@ class userBidView(View):
 
         highest_bid = item.bids.aggregate(Max('bid_amount'))['bid_amount__max']
         
-        if highest_bid is None and bid_amount < item.item_start_price:
+        if highest_bid is None and bid_amount <= item.item_start_price:
             messages.info(request, 'Bid must be higher than start price.')
             return redirect("user_bid",item_id=item_id)
         elif highest_bid is not None and bid_amount <= highest_bid:
@@ -323,7 +334,7 @@ class userAddCreditsView(View):
 class userOwnBidsView(View):
     def get(self, request, *args, **kwargs):
 
-        bid_queryset = BidModel.objects.filter(bidder=request.user.id)
+        bid_queryset = BidModel.objects.filter(bidder=request.user.id).order_by('-bid_time')
 
         bid_details = []
         for bid in bid_queryset:
@@ -336,7 +347,7 @@ class userOwnBidsView(View):
                 "your_bid": bid.bid_amount,
                 "closing_date": bid.item.auction_end_date,
             })
-        
+
         # Pass bid_details to the template
         return render(
             request,
@@ -381,10 +392,10 @@ class adminAuctionsListView(View):
                 return redirect("admin_auctions_list")
             else:
                 ItemModel.objects.filter(id=request.POST.get("item_id")).delete()
+                messages.warning(request, "Item deleted successfuly.")
+
                 return redirect("admin_auctions_list")
         
-        
-
         
         if request.POST.get("editsubmit") and request.POST.get("item_id"):
             item_id = request.POST.get("item_id")
@@ -398,39 +409,45 @@ class adminAuctionsListView(View):
 class adminItemDetailView(View):
     def get(self, request, *args, **kwargs):
 
+        #highest_bid = None
         item_id = kwargs.get('item_id')
         item = get_object_or_404(ItemModel, id=item_id)
-        if timezone.now() > item.auction_end_date:
-
-            highest_bid = (
+        highest_bid = (
                 BidModel.objects.filter(item_id=item_id)
                 .aggregate(Max("bid_amount"))["bid_amount__max"]
             )
-
-
-            winning_bid = BidModel.objects.filter(item_id=item_id, bid_amount=highest_bid).first()
-            
+        if timezone.now() > item.auction_end_date:
 
             if highest_bid:
                 item.soldout_price = highest_bid
                 item.save()
 
-
-            winner_name = winning_bid.bidder if winning_bid else "No winner (no bids)"
-
-            return render(request, 'admin_item_details.html', {
+            #winner_name = winning_bid.bidder if winning_bid else "No winner (no bids)"
+            
+            winning_bid = BidModel.objects.filter(item_id=item_id, bid_amount=highest_bid).first()
+            
+            if winning_bid is None:
+                return render(request, 'admin_item_details.html', {
+                    'item': item,
+                    'highest_bid': "No bid",
+                    'winner_name': "No winner (no bids)",
+                    'soldout_price': item.soldout_price
+                })
+            else:
+                winner_id = winning_bid.bidder 
+                winner_name = get_object_or_404(UserModel, id=winner_id)
+                winner_name = winner_name.username
+                return render(request, 'admin_item_details.html', {
                 'item': item,
                 'highest_bid': highest_bid,
                 'winner_name': winner_name,
-                'soldout_price': item.soldout_price
-            })
-        else:
-            return render(request, 'admin_item_details.html', {'item': item})
+                'soldout_price': item.soldout_price})
+                        
             
+            #return render(request, 'admin_item_details.html', {'item': item})
+        print("-------------->> HIGHEST BID : ",highest_bid)
+        return render(request, 'admin_item_details.html', {'item': item,"highest_bid": highest_bid}) 
 
-
-        #return render(request, 'admin_item_details.html', {'item': item,"highest_bid": highest_bid}) 
- 
 """ 
 def get(self, request, *args, **kwargs):
     item_id = kwargs.get('item_id')
@@ -488,9 +505,8 @@ class adminAddItemView(View):
             .values()
             .first()
         )
-        
-        # Fetch the item
 
+        # Fetch the item
 
         if item_obj and item_obj.get("item_image"):
             item_obj["item_image"] = item_obj["item_image"].split("/")[1]
@@ -500,6 +516,7 @@ class adminAddItemView(View):
                 template_name="admin_add_item.html",
                 context={"item_obj": item_obj},
             )
+        return render(request, "admin_add_item.html")
 
     def post(self, request, *args, **kwargs):
 
@@ -519,6 +536,7 @@ class adminAddItemView(View):
             # Check if a new image is uploaded, and update the item image
             if request.FILES.get("itemimage"):
                 item_obj.item_image = request.FILES.get("itemimage")
+        
 
             item_obj.save()  # Save the updated item
             return redirect("admin_auctions_list")  # Redirect to the auctions list page
@@ -535,3 +553,23 @@ class adminAddItemView(View):
                 auction_end_date=request.POST.get("enddate"),
             )
             return redirect("admin_auctions_list")  # Redirect to the auctions list page
+
+
+
+class adminAllBids(View):
+    def get(self, request, *args, **kwargs):
+        all_bids = BidModel.objects.all().order_by('-bid_time')
+
+        bid_details = []
+        for bid in all_bids:
+            bid_details.append({
+                "bid_id": bid.id,
+                "item_image": bid.item.item_image.url if bid.item.item_image else None,
+                "item_name": bid.item.item_name,
+                "bidder": UserModel.objects.get(id=bid.bidder).username if UserModel.objects.filter(id=bid.bidder).exists() else "Unknown",
+                "bid_amount": bid.bid_amount,
+                "bid_date_time": bid.bid_time,
+            })
+
+        return render(request, "admin_all_bids.html", {"bid_details": bid_details})
+

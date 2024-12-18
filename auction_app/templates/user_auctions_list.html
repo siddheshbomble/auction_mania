@@ -48,9 +48,14 @@
               <td style="color:white;">{{ obj.highest_bid }}</td>
               <td style="color:white;">{{ obj.auction_end_date }}</td>
               <td style="color:white;">
-                <a class="btn btn-primary btn-sm" href="{% url 'user_bid' item_id=obj.id %}">
-                    <i class="bx bx-edit-alt"></i> Bid
-                </a>
+
+                <form method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ obj.id }}">
+                  <button type="submit" name="bidsubmit" value="bid" class="btn btn-primary btn-sm" style="font-size:16px; font-weight:bold;">
+                    <i class="bx bx"></i> Bid
+                  </button>
+                </form>
               </td>
             </tr>
             {% endfor %}

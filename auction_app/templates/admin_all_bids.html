@@ -1,0 +1,46 @@
+{% extends "admin_home.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="card" style="margin-top: 30px; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <div class="card-header" style=" background-color:#15616d; ">
+      <h3 style="color:white;">All Bids</h3>
+    </div> 
+    <div class="card-body" style=" background-color:#15616d">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="color:white; font-size:15px;">Bid ID</th>
+              <th style="color:white; font-size:15px;">Item</th>
+              <th style="color:white; font-size:15px;">Item Name</th>
+              <th style="color:white; font-size:15px;">User</th>
+              <th style="color:white; font-size:15px;">Bid amount</th>
+              <th style="color:white; font-size:15px;">Date time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% csrf_token %}
+            {% for bid in bid_details %}
+            <tr>
+              <td style="color:white;">{{ bid.bid_id }}</td>
+              <td style="color:white;">
+                {% if bid.item_image %}
+                <img src="{{ bid.item_image }}" alt="Item Image" width="100">
+                {% else %}
+                No Image
+                {% endif %}
+            </td>
+              <td style="color:white;">{{ bid.item_name }}</td>
+              <td style="color:white;">{{ bid.bidder }}</td>
+              <td style="color:white;">{{ bid.bid_amount }}</td>
+              <td style="color:white;">{{ bid.bid_date_time }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

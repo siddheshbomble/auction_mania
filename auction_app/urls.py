@@ -16,6 +16,7 @@ urlpatterns = [
     #---------------------- user paths -------------------------# 
     path('user_home/',views.userView.as_view(), name="user_home"),
     path('all_auctions/',views.userAuctionsListView.as_view(), name="user_auctions_list"),
+    path('all_auctions_bid/<int:item_id>/',views.userAuctionsListView.as_view(), name="user_auctions_bid"),
     path('bid/<int:item_id>/',views.userBidView.as_view(), name="user_bid"),
     path('add_credits/',views.userAddCreditsView.as_view(), name="user_add_credits"),
     path('user_all_bids/',views.userOwnBidsView.as_view(), name="user_all_bids"),
@@ -26,9 +27,10 @@ urlpatterns = [
     path('users_list/',views.adminUsersListView.as_view(), name="admin_users_list"),
     path('add_item/',views.adminAddItemView.as_view(), name="admin_add_item"),
     path('add_item/<int:item_id>/', views.adminAddItemView.as_view(), name='admin_add_item_with_id'),
+    path('admin_all_bids/',views.adminAllBids.as_view(), name="admin_all_bids"),
     path('item_details/<int:item_id>/',views.adminItemDetailView.as_view(), name="item_details"),
 
-    
+
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 

@@ -158,12 +158,21 @@
         </a>
     </li>
 
-    <li class="menu-item">
-        <a href="{% url 'admin_users_list' %}" class="menu-link">
-            <i class="bx bx-user me-1"></i>
-        <div data-i18n="Basic">All Users</div>
-        </a>
+    <li class="menu-item active">
+      <a href="{% url 'admin_all_bids' %}" class="menu-link">
+      <i class="menu-icon tf-icons bx bx-collection me-0"></i>
+      <div data-i18n="Basic">All Bids</div>
+      </a>
     </li>
+
+    <li class="menu-item active">
+      <a href="{% url 'admin_users_list' %}" class="menu-link">
+      <i class="bx bx-user me-1"></i>
+      <div data-i18n="Basic">All Users</div>
+      </a>
+    </li>
+
+
 
   </ul>
 {% endblock %}
