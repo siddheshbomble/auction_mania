@@ -65,15 +65,11 @@ class loginView(View):
         password=request.POST.get("password")
 
         try:
-            # Query your custom model for the user
             user_obj = UserModel.objects.get(username=username)
-            # Verify the password
             if check_password(password, user_obj.password):
-                # Log the user in
-                login(request, user_obj)  # Ensure your user model works with Django's session
+                login(request, user_obj) 
                 if user_obj.is_staff:
-                    #request.session["user_id"] = user_obj.user_id
-                    #request.session["user_credit"] = user_obj.user_credit
+
 
                     return redirect("admin_auctions_list")
                 else:
@@ -95,14 +91,17 @@ class loginView(View):
                 return redirect("user_auctions_list")
 
 class adminView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         return render(request, template_name="admin_home.html")
 
 class userView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         return render(request, template_name="user_home.html")
 
 class userAuctionsListView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         """if request.GET.get("query"):
             item_obj = ItemModel.objects.filter(
@@ -120,7 +119,6 @@ class userAuctionsListView(View):
         else:
             item_obj = ItemModel.objects.filter(soldout_price=0).order_by('-id').values()
 
-        # Add highest bid to each item
         for obj in item_obj:
             item_id = obj.get("id")
             highest_bid = (
@@ -149,8 +147,8 @@ class userAuctionsListView(View):
             else:
                 return redirect("user_bid",item_id=item_id)
 
-@method_decorator(login_required, name='dispatch')
 class userBidView(View):
+    @method_decorator(login_required)
     def get(self, request, item_id, *args, **kwargs):
         item = get_object_or_404(ItemModel, id=item_id)
         highest_bid = item.bids.first()  
@@ -210,11 +208,12 @@ class userBidView(View):
             return HttpResponse(f"Error Exception placing bid: {str(e)}", status=500)
 
 class userAddCreditsView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         user_id = request.user.id
         print("------------->  USER ID : " , user_id)
 
-        user_obj = request.user  # Logged-in user
+        user_obj = request.user   
         return render(
             request,
             template_name="user_add_credits.html",
@@ -225,7 +224,7 @@ class userAddCreditsView(View):
         user_id = request.user.id
         print("------------->  USER ID : " , user_id)
 
-        user_obj = request.user  # Logged-in user
+        user_obj = request.user  
         credits_to_add = request.POST.get("credits")
         if credits_to_add:
             try:
@@ -266,8 +265,8 @@ class userOwnBidsView(View):
         )
 """
 
-@method_decorator(login_required, name='dispatch')
 class userOwnBidsView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
 
         bid_queryset = BidModel.objects.filter(bidder=request.user.id).order_by('-bid_time')
@@ -313,46 +312,19 @@ class userOwnBidsView(View):
             }
         )
 
-@method_decorator(login_required, name='dispatch')
 class adminAuctionsListView(View):
-    """def get(self, request, *args, **kwargs):
-        query = request.GET.get("query")
-
-        if query:
-            item_obj = ItemModel.objects.filter(
-                item_name__icontains=query
-            ).values()
-        else:
-            item_obj = ItemModel.objects.values()
-
-        for obj in item_obj:
-            item_id = obj.get("id")
-            highest_bid = (
-                BidModel.objects.filter(item_id=item_id)
-                .aggregate(Max("bid_amount"))["bid_amount__max"]
-            )
-            obj["highest_bid"] = highest_bid if highest_bid is not None else 0.00
-            obj["item_name"] = obj.get("item_name")
-            print("-----------------> MEDIA : ", obj["item_image"])
-            print("-----------------> Highest Bid: ", obj["highest_bid"])
-
-        return render(
-            request,
-            template_name="admin_auctions_list.html",
-            context={"item_list": item_obj},
-        ) """
-
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         query = request.GET.get("query")
 
         if query:
             item_obj = ItemModel.objects.filter(
                 item_name__icontains=query
-            ).order_by('-id').values()  # Fetch dictionaries and order by item_id
+            ).order_by('-id').values()  
         else:
-            item_obj = ItemModel.objects.all().order_by('-id').values()  # Fetch dictionaries and order by item_id
+            item_obj = ItemModel.objects.all().order_by('-id').values() 
 
-        # Add highest bid to each item
+  
         for obj in item_obj:
             highest_bid = (
                 BidModel.objects.filter(item_id=obj["id"])
@@ -392,8 +364,8 @@ class adminAuctionsListView(View):
                 return redirect("admin_add_item_with_id",item_id=item_id)
 
 class adminItemDetailView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-
         #highest_bid = None
         item_id = kwargs.get('item_id')
         item = get_object_or_404(ItemModel, id=item_id)
@@ -434,6 +406,7 @@ class adminItemDetailView(View):
         return render(request, 'admin_item_details.html', {'item': item,"highest_bid": highest_bid}) 
 
 class adminUsersListView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         users = UserModel.objects.filter(is_staff=False, is_superuser=False).values()
         context = {
@@ -442,6 +415,7 @@ class adminUsersListView(View):
         return render(request, template_name="admin_users_list.html",context=context)
 
 class adminAddItemView(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         item_obj = None
         item_id = kwargs.get('item_id')
@@ -458,7 +432,6 @@ class adminAddItemView(View):
             .first()
         )
 
-        # Fetch the item
 
         if item_obj and item_obj.get("item_image"):
             item_obj["item_image"] = item_obj["item_image"].split("/")[1]
@@ -475,7 +448,6 @@ class adminAddItemView(View):
         #item_id = request.GET.get("id")
         item_id = kwargs.get('item_id')
         
-        # Update the item if it exists, or create a new item if the ID is not provided
         if item_id:
             item_obj = ItemModel.objects.get(id=item_id)
             item_obj.item_name = request.POST.get("itemname")
@@ -485,16 +457,14 @@ class adminAddItemView(View):
             item_obj.auction_start_date = request.POST.get("startdate")
             item_obj.auction_end_date = request.POST.get("enddate")
 
-            # Check if a new image is uploaded, and update the item image
             if request.FILES.get("itemimage"):
                 item_obj.item_image = request.FILES.get("itemimage")
         
 
-            item_obj.save()  # Save the updated item
-            return redirect("admin_auctions_list")  # Redirect to the auctions list page
+            item_obj.save()  
+            return redirect("admin_auctions_list")  
 
         else:
-            # Create a new item
             ItemModel.objects.create(
                 item_name=request.POST.get("itemname"),
                 owner_name=request.POST.get("ownername"),
@@ -504,9 +474,10 @@ class adminAddItemView(View):
                 auction_start_date=request.POST.get("startdate"),
                 auction_end_date=request.POST.get("enddate"),
             )
-            return redirect("admin_auctions_list")  # Redirect to the auctions list page
+            return redirect("admin_auctions_list")  
 
 class adminAllBids(View):
+    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         all_bids = BidModel.objects.all().order_by('-bid_time')
 
