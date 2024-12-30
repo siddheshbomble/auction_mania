@@ -1,0 +1,28 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "auction_mania/wsgi.py",
+        "use": "@vercel/python",
+        "config":{ "maxLambdasize":"15mb", "runtime":"python3.8.2" }
+      },
+      {
+        "src": "static/**/*",
+        "use": "@vercel/static",
+        "config":{
+            "distDir":"staticfiles"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/static/(.*)",
+        "dest": "/static/$1"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "auction_mania/wsgi.py"
+      }
+    ]
+  }
+  
