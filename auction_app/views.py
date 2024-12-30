@@ -25,6 +25,7 @@ from django.contrib import messages
 from django.db.models import Max, OuterRef, Subquery
 from django.utils.timezone import now
 
+
 def index(request):
     users = UserModel.objects.all().values()
     template = loader.get_template("index.html")
@@ -56,11 +57,7 @@ class loginView(View):
         return render(request, "login.html")
 
     def post(self, request, *args, **kwargs):
-        """ user_obj = authenticate(
-            request,
-            username=request.POST.get("username"),
-            password=request.POST.get("password"),
-        ) """
+
         username=request.POST.get("username")
         password=request.POST.get("password")
 
@@ -103,12 +100,6 @@ class userView(View):
 class userAuctionsListView(View):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        """if request.GET.get("query"):
-            item_obj = ItemModel.objects.filter(
-                item_name__icontains=request.GET.get("query")
-            ).values()
-        else:
-            item_obj = ItemModel.objects.values() """
 
         query = request.GET.get("query")
         if query:
@@ -164,8 +155,6 @@ class userBidView(View):
 
     def post(self, request, item_id, *args, **kwargs):
         item = get_object_or_404(ItemModel, id=item_id)
-        
-
 
         if not request.user.is_authenticated:
             messages.info(request, 'You must be logged in to place a bid.')
@@ -238,33 +227,7 @@ class userAddCreditsView(View):
             template_name="user_add_credits.html",
             context={"user_obj": user_obj}
         )
-""" 
-@method_decorator(login_required, name='dispatch')
-class userOwnBidsView(View):
-    def get(self, request, *args, **kwargs):
-
-        bid_queryset = BidModel.objects.filter(bidder=request.user.id).order_by('-bid_time')
-
-        bid_details = []
-        for bid in bid_queryset:
-            bid_details.append({
-                "item_image": bid.item.item_image if bid.item.item_image else None,
-                "item_name": bid.item.item_name,
-                "start_price": bid.item.item_start_price,
-                "highest_bid": BidModel.objects.filter(item=bid.item)
-                                                .aggregate(Max("bid_amount"))["bid_amount__max"],
-                "your_bid": bid.bid_amount,
-                "closing_date": bid.item.auction_end_date,
-            })
-
-        # Pass bid_details to the template
-        return render(
-            request,
-            "user_view_own_bids.html",
-            context={"bid_details": bid_details}
-        )
-"""
-
+        
 class userOwnBidsView(View):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -493,4 +456,3 @@ class adminAllBids(View):
             })
 
         return render(request, "admin_all_bids.html", {"bid_details": bid_details})
-
