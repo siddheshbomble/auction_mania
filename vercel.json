@@ -23,6 +23,9 @@
         "src": "/(.*)",
         "dest": "auction_mania/wsgi.py"
       }
-    ]
+    ],
+    "hooks": {
+    "build": "python manage.py migrate"
+  }
   }
   
