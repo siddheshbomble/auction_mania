@@ -1,3 +1,7 @@
 Django
 PyMySQL
+<<<<<<< HEAD
 gunicorn
+=======
+gunicorn
+>>>>>>> eac8658168fb0699a8e6b657cf507917c9885684
