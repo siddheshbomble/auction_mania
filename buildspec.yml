@@ -8,7 +8,7 @@ phases:
   build:
     commands:
       - echo "BUILD STARTED"
-      - python manage.py collectstatic --noinput
+      - python manage.py collectstatic --noinput || { echo 'Collectstatic failed'; exit 1; }
       - zip -r application.zip .
       - echo "BUILD COMPLETE"
 artifacts:
