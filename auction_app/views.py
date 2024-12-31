@@ -25,6 +25,7 @@ from django.contrib import messages
 from django.db.models import Max, OuterRef, Subquery
 from django.utils.timezone import now
 
+# all views here
 
 def index(request):
     users = UserModel.objects.all().values()
