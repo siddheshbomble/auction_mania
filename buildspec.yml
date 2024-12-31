@@ -7,8 +7,10 @@ phases:
       - pip install -r requirements.txt
   build:
     commands:
+      - echo "BUILD STARTED"
       - python manage.py collectstatic --noinput
       - zip -r application.zip .
+      - echo "BUILD COMPLETE"
 artifacts:
   files:
     - application.zip
