@@ -1,1 +1,1 @@
-web: gunicorn auction_mania.wsgi
+web: gunicorn --bind 0.0.0.0:8000 myproject.wsgi:application
