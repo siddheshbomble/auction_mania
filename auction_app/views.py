@@ -98,7 +98,6 @@ class userView(View):
     def get(self, request, *args, **kwargs):
         return render(request, template_name="user_home.html")
 
-
 class userAuctionsListView(View):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -139,7 +138,6 @@ class userAuctionsListView(View):
                 return redirect("user_auctions_list")
             else:
                 return redirect("user_bid",item_id=item_id)
-
 
 class userBidView(View):
     @method_decorator(login_required)
@@ -199,7 +197,6 @@ class userBidView(View):
         except Exception as e:
             return HttpResponse(f"Error Exception placing bid: {str(e)}", status=500)
 
-
 class userAddCreditsView(View):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -231,7 +228,6 @@ class userAddCreditsView(View):
             template_name="user_add_credits.html",
             context={"user_obj": user_obj}
         )
-        
         
 class userOwnBidsView(View):
     @method_decorator(login_required)
@@ -279,7 +275,6 @@ class userOwnBidsView(View):
                 "won_details": won_details,
             }
         )
-
 
 class adminAuctionsListView(View):
     @method_decorator(login_required)
@@ -332,7 +327,6 @@ class adminAuctionsListView(View):
             else:
                 return redirect("admin_add_item_with_id",item_id=item_id)
 
-
 class adminItemDetailView(View):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -375,7 +369,6 @@ class adminItemDetailView(View):
         print("-------------->> HIGHEST BID : ",highest_bid)
         return render(request, 'admin_item_details.html', {'item': item,"highest_bid": highest_bid}) 
 
-
 class adminUsersListView(View):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -384,7 +377,6 @@ class adminUsersListView(View):
             'users':users
         }
         return render(request, template_name="admin_users_list.html",context=context)
-
 
 class adminAddItemView(View):
     @method_decorator(login_required)
@@ -447,7 +439,6 @@ class adminAddItemView(View):
                 auction_end_date=request.POST.get("enddate"),
             )
             return redirect("admin_auctions_list")  
-
 
 class adminAllBids(View):
     @method_decorator(login_required)
