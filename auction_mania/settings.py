@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-a8ja0my7ngcu1b+!+)_rz4k--ag#^+irctu8#likk185(yt-5w
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['auction-mania-app-env.eba-p6ctdeqf.ap-southeast-2.elasticbeanstalk.com']
+ALLOWED_HOSTS = ['auction-mania-app-env.eba-p6ctdeqf.ap-southeast-2.elasticbeanstalk.com','127.0.0.1']
 
 
 # Application definition
